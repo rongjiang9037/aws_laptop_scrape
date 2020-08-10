@@ -2,52 +2,25 @@ import logging
 
 import psycopg2
 from sql_queries import * 
-from config import get_config
+import configparser
 
 logging.basicConfig(level=logging.INFO)
 
-config = get_config()
-
-def create_database():
+def connect_db():
     """
-    This function creates bnhlaptop database,
-    and return connection obejct and cursor variable
-    
+    This function connects database and return cur variable and connection object.
+
     input: None
-    return: None
+    outpout: None
     """
-    try:
-        # connect to default database
-        conn = psycopg2.connect("host={} dbname={} user={} password={} port={}".format(*config['DB_DEFAULT'].values()))
-        conn.set_session(autocommit=True)
+    # get config 
+    config = configparser.ConfigParser()
+    config.read('config.cfg')
 
-        # get cursor variable 
-        cur = conn.cursor()
-
-        # drop database bnhlaptop if exists
-        cur.execute(bnhlaptop_db_drop)
-
-        # create new database bnhlapopt
-        cur.execute(bnhlaptop_db_create)
-
-        # close database connection
-        conn.close()
-    except Exception as e:
-        logging.info("Error occurred when creating/dropping database bnhlaptop.")
-        print(e)
-    
-    logging.info("Created new database bnhlaptop.")
-    
-    try:
-        # connect to new database
-        conn = psycopg2.connect("host={} dbname={} user={} password={} port={}".format(*config['DB'].values()))
-        cur = conn.cursor()
-    except Exception as e:
-        logging.info("Error occurred when connecting to new database.")
-        print(e)
-        
+    # connect to database bnhlaptop
+    conn = psycopg2.connect("host={} dbname={} user={} password={} port={}".format(*config['DB'].values()))
+    cur = conn.cursor()
     return cur, conn
-
 
 def drop_tables(cur, conn):
     """
@@ -105,12 +78,17 @@ def main():
     
     """
     # create table and return connection object
-    cur, conn = create_database()
+    cur, conn = connect_db()
     
     # drop & create tables
     drop_tables(cur, conn)
     create_tables(cur, conn)
-    
+
+    # print out current tables
+    cur.execute("""select * from pg_catalog.pg_tables
+                        where schemaname = 'public'""")
+    print(cur.fetchall())
+
     # close database connection
     conn.close()
     
