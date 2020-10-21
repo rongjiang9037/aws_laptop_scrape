@@ -3,6 +3,9 @@ from bs4 import BeautifulSoup
 import psycopg2
 import psycopg2.extras
 
+from random import randint
+from time import sleep
+
 import pandas as pd
 import numpy as np
 
@@ -10,8 +13,10 @@ import json
 import logging
 import re
 import time
+import sys
 
 from sql_queries import *
+from text_message import send_msg
 from config import get_config
 
 logging.basicConfig(level=logging.INFO)
@@ -155,6 +160,9 @@ def iter_laptop_from_site():
     while True:
         # make request for each page, get source code and parse with BeautifulSoup
         print(f'Prepare to scrape for page {page}.')
+        wait_time = randint(10,100)
+        print(f'Waiting for {wait_time}s.')
+        sleep(wait_time)
         try:
             print(url+str(page))
             req = Request(url+str(page), headers = {'User-Agent':'Mozilla/5.0'})
@@ -163,7 +171,8 @@ def iter_laptop_from_site():
         except Exception as e:
             print(f"ERROR ocurred when scraping data for page {page}.")
             print(f"ERROR message: {e}")
-            break
+            send_msg('Error!!!! '+e)
+            sys.exit('A fatal error occurred! Exit the process.')
               
         # parse data on this page
         product_info = iter_laptop_from_page(page_soup)
@@ -197,7 +206,7 @@ def process_data(cur, conn):
         print("Started to scrape")
         # get all laptop info and save it as a list
         all_laptop_iter = iter_laptop_from_site()
-
+        
         # create staging table
         cur.execute(staging_table_create)
         print("Created staging_laptop table.")
@@ -240,9 +249,12 @@ def process_data(cur, conn):
         
         # commit 
         conn.commit()
+        send_msg("All done successfully!")
     except Exception as e:
         print(f'Error happened: {e}')
+        send_msg('Error!!!! '+e)
         conn.rollback()
+        sys.exit('A fatal error occurred! Exit the process.')
     
     
     

@@ -70,6 +70,7 @@ staging_table_create = """CREATE TABLE IF NOT EXISTS staging_laptop2
                                     review_num integer,
                                 UNIQUE(sku)
                                 )
+                          
 """
 
 # insert tables
