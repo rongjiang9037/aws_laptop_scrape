@@ -17,11 +17,9 @@ import sys
 
 from sql_queries import *
 from text_message import send_msg
-from config import get_config
+import configparser
 
 logging.basicConfig(level=logging.INFO)
-
-config = get_config()
 
 
 def is_last_page(soup, curr_page):
@@ -82,8 +80,8 @@ def iter_laptop_from_page(soup):
             product_dict['name'] = re.findall('[1][0-9\.]+\".*$', ProductBrandName)[0].lower()
         except:
             ProductBrandNameList = ProductBrandName.split()
-            product_dict['name'] = ' '.join(ProductBrandNameList[1:])
-            product_dict['brand'] = ProductBrandNameList[0]
+            product_dict['name'] = ' '.join(ProductBrandNameList[1:]).lower()
+            product_dict['brand'] = ProductBrandNameList[0].lower()
 
         # get product sku
         ProductSku = product.find('div', attrs={'data-selenium':'miniProductPageProductSkuInfo'}).text
@@ -96,7 +94,7 @@ def iter_laptop_from_page(soup):
             product_dict['price'] = ProductPrice
         except:
             product_dict['price'] = None
-            print(f"{ProductBrandName} doesn't have a price.")
+            # print(f"{ProductBrandName} doesn't have a price.")
 
         # get product regular price
         try:
@@ -105,7 +103,7 @@ def iter_laptop_from_page(soup):
             product_dict['reg_price'] = float(ProductRegPrice)
         except:
             product_dict['reg_price'] = None
-            print(f"{ProductBrandName} doesn't have a reg price.")
+            # print(f"{ProductBrandName} doesn't have a reg price.")
 
         # get money saved
         try:
@@ -114,7 +112,7 @@ def iter_laptop_from_page(soup):
             product_dict['money_saved'] = float(ProductSaved)
         except:
             product_dict['money_saved'] = None
-            print(f"{ProductBrandName} doesn't have money saved info.")
+            # print(f"{ProductBrandName} doesn't have money saved info.")
 
         # get product URL
         product_dict['url'] = product.find('a', attrs={'data-selenium':'miniProductPageProductImgLink'})['href'].lower()
@@ -125,7 +123,7 @@ def iter_laptop_from_page(soup):
             product_dict['availability'] = productAvalability
         except: 
             product_dict['availability'] = None
-            print(f"{ProductBrandName} doesn't have availability info.")
+            # print(f"{ProductBrandName} doesn't have availability info.")
 
         # get number of reviews
         try:
@@ -223,13 +221,13 @@ def process_data(cur, conn):
         cur.execute(brand_table_insert_from_staging)
 
         # extract data from ticker_csv and insert into brand table
-        df_ticker = pd.read_csv('../data/brand_ticker_info.csv')
+        df_ticker = pd.read_csv('data/brand_ticker_info.csv')
         df_ticker = df_ticker.rename(columns={'brand':'name'})
         psycopg2.extras.execute_batch(cur, brand_table_insert, df_ticker.to_dict(orient='records'))
         print("Successfully inserted data into brand table.")
 
         # extract time info from staging_laptop table
-        cur.execute("SELECT DISTINCT time FROM staging_laptop2")
+        cur.execute("SELECT DISTINCT time FROM staging_laptop")
         curr_time = cur.fetchone()[0]
 
         # convert np.datetime format to pd.timestamp
@@ -273,13 +271,13 @@ def main():
     input: None
     return: None
     """
+    # get config
+    config = configparser.ConfigParser()
+    config.read('config.cfg')
+
     # connect to database
     logging.info("Started to scrape data for {}".format(np.datetime_as_string(np.datetime64('now'), unit='D')))
-    conn = psycopg2.connect(host='localhost', 
-                            dbname='bnhlaptop', 
-                            password='test', 
-                            port=5432, 
-                            user='postgres')
+    conn = psycopg2.connect("host={} dbname={} user={} password={} port={}".format(*config['DB'].values()))
     cur = conn.cursor()
     logging.info("Connected to database bnhlaptop.")
     

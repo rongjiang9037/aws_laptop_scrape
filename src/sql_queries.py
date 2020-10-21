@@ -1,10 +1,3 @@
-# drop database
-bnhlaptop_db_drop = """DROP DATABASE IF EXISTS bnhlaptop"""
-
-# create database
-bnhlaptop_db_create = """CREATE DATABASE bnhlaptop 
-                            WITH ENCODING 'utf8'
-                            TEMPLATE template0"""
 
 # drop tables
 laptop_table_drop = """DROP TABLE IF EXISTS dimlaptop"""
@@ -15,7 +8,7 @@ time_table_drop = """DROP TABLE IF EXISTS dimtime"""
 
 laptopinfo_table_drop = """DROP TABLE IF EXISTS factlaptopinfo"""
 
-staging_table_delete = """DROP TABLE IF EXISTS staging_laptop2;"""
+staging_table_delete = """DROP TABLE IF EXISTS staging_laptop;"""
 
 # create tables
 laptop_table_create = """CREATE TABLE IF NOT EXISTS dimlaptop
@@ -56,7 +49,7 @@ laptopinfo_table_create = """CREATE TABLE IF NOT EXISTS factlaptopinfo
                                 )
                     """
 
-staging_table_create = """CREATE TABLE IF NOT EXISTS staging_laptop2
+staging_table_create = """CREATE TABLE IF NOT EXISTS staging_laptop
                                 (   ID SERIAL PRIMARY KEY,
                                     time date NOT NULL,
                                     name varchar NOT NULL,
@@ -76,7 +69,7 @@ staging_table_create = """CREATE TABLE IF NOT EXISTS staging_laptop2
 # insert tables
 laptop_table_insert = """INSERT INTO dimlaptop (name, sku, url)
                             SELECT name, sku, url
-                            FROM staging_laptop2
+                            FROM staging_laptop
                             ON CONFLICT (sku)
                             DO UPDATE SET name = excluded.name,
                                           url = excluded.url;
@@ -92,7 +85,7 @@ brand_table_insert = """INSERT INTO dimbrand (name, ticker, exchange_nm)
 """
 brand_table_insert_from_staging = """INSERT INTO dimbrand (name, ticker, exchange_nm)
                                         SELECT DISTINCT brand, null, null
-                                            FROM staging_laptop2
+                                            FROM staging_laptop
                                     ON CONFLICT 
                                     DO NOTHING
 """
@@ -112,13 +105,13 @@ laptopinfo_table_insert = """INSERT INTO factlaptopinfo (time, laptop_key, brand
                                        staging.money_saved,
                                        staging.availability,
                                        staging.review_num
-                                FROM staging_laptop2 staging
+                                FROM staging_laptop staging
                                 JOIN dimlaptop laptop ON (staging.sku = laptop.sku)
                                 JOIN dimbrand brand ON (staging.brand = brand.name);
 """
 
 
-staging_table_insert = """INSERT INTO staging_laptop2 (name, time, brand, sku, price, reg_price, money_saved, url, availability, review_num)
+staging_table_insert = """INSERT INTO staging_laptop (name, time, brand, sku, price, reg_price, money_saved, url, availability, review_num)
                                 VALUES ( %(name)s,
                                          %(time)s,
                                          %(brand)s,
