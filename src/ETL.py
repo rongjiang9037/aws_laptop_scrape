@@ -85,7 +85,7 @@ def iter_laptop_from_page(soup):
 
         # get product sku
         ProductSku = product.find('div', attrs={'data-selenium':'miniProductPageProductSkuInfo'}).text
-        product_dict['sku'] = re.findall('B&H # ([0-9A-Z]+) MFR', ProductSku)[0]
+        product_dict['sku'] = re.findall('B&H # ([^\s]+) MFR', ProductSku)[0]
 
         # get product price
         try: 
@@ -169,7 +169,7 @@ def iter_laptop_from_site():
         except Exception as e:
             print(f"ERROR ocurred when scraping data for page {page}.")
             print(f"ERROR message: {e}")
-            send_msg('Error!!!! '+e)
+            send_msg(f'Error!!!!{e}' )
             sys.exit('A fatal error occurred! Exit the process.')
               
         # parse data on this page
@@ -250,7 +250,7 @@ def process_data(cur, conn):
         send_msg("All done successfully!")
     except Exception as e:
         print(f'Error happened: {e}')
-        send_msg('Error!!!! '+e)
+        send_msg(f'Error!!!! {e}')
         conn.rollback()
         sys.exit('A fatal error occurred! Exit the process.')
     
