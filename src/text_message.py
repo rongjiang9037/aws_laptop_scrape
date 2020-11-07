@@ -3,7 +3,7 @@ from twilio.rest import Client
 # Your Account SID from twilio.com/console
 account_sid = "ACde61f88f78c4d03db0afa78ba187082a"
 # Your Auth Token from twilio.com/console
-auth_token  = "7e6f4342de20473a59ac682c699749cb"
+auth_token  = "5d21421134ababd20b3676f0ca2b2da2"
 
 client = Client(account_sid, auth_token)
 
